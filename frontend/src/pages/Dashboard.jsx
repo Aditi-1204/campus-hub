@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import api from '../api';
+import Navbar from '../components/Navbar';
 
 const stats = [
   { icon: '📚', label: 'Courses Enrolled', value: '6' },
@@ -94,7 +95,7 @@ const quickLinks = [
 ];
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, isRole, getUserField } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [commSection, setCommSection] = useState('messaging');
@@ -103,14 +104,11 @@ export default function Dashboard() {
   const [form, setForm] = useState({ receiverId: '', subject: '', body: '', type: 'message' });
   const [sending, setSending] = useState(false);
 
-  const token = localStorage.getItem('campushub_token');
-  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-
   const loadCommunication = async () => {
     try {
       const [fRes, sRes] = await Promise.all([
-        axios.get('/api/messages/faculty', authHeader),
-        axios.get('/api/messages/sent', authHeader),
+        api.get('/api/messages/faculty'),
+        api.get('/api/messages/sent'),
       ]);
       setFaculty(fRes.data);
       setSentMsgs(sRes.data);
@@ -124,7 +122,7 @@ export default function Dashboard() {
     if (!form.receiverId) return toast.error('Please select a faculty member');
     setSending(true);
     try {
-      await axios.post('/api/messages/send', form, authHeader);
+      await api.post('/api/messages/send', form);
       toast.success('Sent successfully!');
       setForm({ receiverId: '', subject: '', body: '', type: form.type });
       loadCommunication();
@@ -141,38 +139,18 @@ export default function Dashboard() {
     loadCommunication();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/');
-  };
-
   const tabs = ['overview', 'attendance', 'assignments', 'results', 'timetable', 'communication'];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Topbar */}
-      <nav className="bg-blue-900 text-white px-8 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold">🎓 CampusHub</span>
-        <div className="flex items-center gap-4">
-          <span className="text-blue-200 text-sm">
-            {user?.name} · <span className="capitalize">{user?.role}</span>
-          </span>
-          <button
-            onClick={handleLogout}
-            className="bg-white text-blue-900 text-sm font-semibold px-4 py-1.5 rounded-full hover:bg-blue-50 transition"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-            <p className="text-gray-500 text-sm">Academic Year 2024–25 · Semester VI</p>
+            <h1 className="text-2xl font-bold text-gray-800">Welcome, {getUserField('name', 'Student')} 👋</h1>
+            <p className="text-gray-500 text-sm">Academic Year 2024–25 · Semester VI {isRole('admin') && <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-semibold">Admin</span>}{isRole('faculty') && <span className="ml-2 bg-emerald-100 text-emerald-600 text-xs px-2 py-0.5 rounded-full font-semibold">Faculty</span>}</p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-sm text-blue-800 font-medium">
             📅 {new Date().toDateString()}

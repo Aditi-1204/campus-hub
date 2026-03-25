@@ -1,19 +1,7 @@
 const router = require('express').Router();
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Message = require('../models/Message');
-
-// Middleware to verify token
-const auth = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'No token' });
-  try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ message: 'Invalid token' });
-  }
-};
+const { auth, requireRole } = require('../middleware/auth');
 
 // Get all faculty members (for student to pick recipient)
 router.get('/faculty', auth, async (req, res) => {
@@ -55,7 +43,7 @@ router.get('/sent', auth, async (req, res) => {
 });
 
 // Get all messages received by the logged-in faculty
-router.get('/inbox', auth, async (req, res) => {
+router.get('/inbox', auth, requireRole('faculty', 'admin'), async (req, res) => {
   try {
     const msgs = await Message.find({ receiver: req.user.id })
       .populate('sender', 'name email')
@@ -67,7 +55,7 @@ router.get('/inbox', auth, async (req, res) => {
 });
 
 // Faculty replies to a message
-router.patch('/reply/:id', auth, async (req, res) => {
+router.patch('/reply/:id', auth, requireRole('faculty', 'admin'), async (req, res) => {
   try {
     const msg = await Message.findById(req.params.id);
     if (!msg) return res.status(404).json({ message: 'Message not found' });
