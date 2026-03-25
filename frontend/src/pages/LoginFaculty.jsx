@@ -52,7 +52,12 @@ export default function LoginFaculty() {
       toast.success(`Welcome, ${data.user.name}!`);
       navigate('/faculty-dashboard');
     } catch (err) {
-      const msg = err.message || 'Something went wrong';
+      const raw = err.message || 'Something went wrong';
+      const msg =
+        raw.includes('not found') || raw.includes('No user') ? 'User not found. Please register.' :
+        raw.includes('Invalid email or password') || raw.includes('Invalid credentials') ? 'Incorrect password. Please try again.' :
+        raw.includes('already registered') ? 'This email is already registered. Please login.' :
+        raw;
       setApiError(msg);
       toast.error(msg);
     } finally {

@@ -31,7 +31,7 @@ export default function Login() {
     setForm({ ...form, [name]: value });
     setApiError('');
     if (name === 'email')
-      setEmailError(value && !validStudentEmail(value) ? 'Incorrect email entered. Format: 10digits@cgu-odisha.ac.in' : '');
+      setEmailError(value && !validStudentEmail(value) ? 'Incorrect email ID' : '');
   };
 
   const redirectByRole = (role) => {
@@ -44,7 +44,7 @@ export default function Login() {
     setApiError('');
 
     if (!validStudentEmail(form.email)) {
-      setEmailError('Incorrect email entered. Format: 10digits@cgu-odisha.ac.in');
+      setEmailError('Incorrect email ID');
       return;
     }
 
@@ -61,7 +61,13 @@ export default function Login() {
       toast.success(`Welcome, ${data.user.name}!`);
       redirectByRole(data.user.role);
     } catch (err) {
-      const msg = err.message || 'Something went wrong';
+      const raw = err.message || 'Something went wrong';
+      // Map backend messages to user-friendly ones
+      const msg =
+        raw.includes('not found') || raw.includes('No user') ? 'User not found. Please register.' :
+        raw.includes('Invalid email or password') || raw.includes('Invalid credentials') ? 'Incorrect password. Please try again.' :
+        raw.includes('already registered') ? 'This email is already registered. Please login.' :
+        raw;
       setApiError(msg);
       toast.error(msg);
     } finally {

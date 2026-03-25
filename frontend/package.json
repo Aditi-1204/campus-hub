@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "campushub",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -29,7 +29,7 @@
     "tailwindcss": "^4.2.2",
     "vite": "^8.0.1"
   },
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "description": "CampusHub — College ERP platform for students, faculty and admin.",
   "main": "eslint.config.js",
   "keywords": [],
   "author": "",
