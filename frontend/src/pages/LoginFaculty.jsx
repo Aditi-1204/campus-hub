@@ -14,7 +14,6 @@ export default function LoginFaculty() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  // If already logged in, redirect to faculty dashboard
   useEffect(() => {
     const token = localStorage.getItem('campushub_token');
     if (token && user) navigate('/faculty-dashboard', { replace: true });
@@ -27,35 +26,31 @@ export default function LoginFaculty() {
     setForm({ ...form, [name]: value });
     setApiError('');
     if (name === 'email')
-      setEmailError(value && !validFacultyEmail(value) ? 'Incorrect email. Format: 6digits4letters@cgu-odisha.ac.in' : '');
+      setEmailError(value && !validFacultyEmail(value) ? 'Incorrect email ID' : '');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError('');
-
     if (!validFacultyEmail(form.email)) {
-      setEmailError('Incorrect email. Format: 6digits4letters@cgu-odisha.ac.in');
+      setEmailError('Incorrect email ID');
       return;
     }
-
     setLoading(true);
     try {
       const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
       const payload = isRegister
         ? { name: form.name.trim(), email: form.email.trim(), password: form.password, role: 'faculty' }
         : { email: form.email.trim(), password: form.password };
-
       const { data } = await api.post(endpoint, payload);
-
       login(data.user, data.token);
       toast.success(`Welcome, ${data.user.name}!`);
       navigate('/faculty-dashboard');
     } catch (err) {
       const raw = err.message || 'Something went wrong';
       const msg =
-        raw.includes('not found') || raw.includes('No user') ? 'User not found. Please register.' :
-        raw.includes('Invalid email or password') || raw.includes('Invalid credentials') ? 'Incorrect password. Please try again.' :
+        raw.includes('not found') || raw.includes('No user') ? 'User not found. Please register first.' :
+        raw.includes('Incorrect password') || raw.includes('Invalid credentials') ? 'Incorrect password. Please try again.' :
         raw.includes('already registered') ? 'This email is already registered. Please login.' :
         raw;
       setApiError(msg);
@@ -66,15 +61,14 @@ export default function LoginFaculty() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-emerald-700 to-teal-800 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-stone-800 via-amber-900 to-stone-700 flex items-center justify-center px-4">
+      <div className="bg-amber-50 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-amber-200">
         <div className="text-center mb-6">
           <span className="text-3xl">👨🏫</span>
-          <h2 className="text-2xl font-bold text-emerald-900 mt-1">Faculty Portal</h2>
-          <p className="text-gray-500 text-sm">{isRegister ? 'Create your faculty account' : 'Sign in to your faculty account'}</p>
+          <h2 className="text-2xl font-bold text-stone-800 mt-1">Faculty Portal</h2>
+          <p className="text-stone-500 text-sm">{isRegister ? 'Create your faculty account' : 'Sign in to your faculty account'}</p>
         </div>
 
-        {/* Inline API error banner */}
         {apiError && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
             ⚠️ {apiError}
@@ -84,19 +78,19 @@ export default function LoginFaculty() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Full Name</label>
+              <label className="block text-xs font-semibold text-stone-500 mb-1 uppercase tracking-wide">Full Name</label>
               <input
                 name="name"
                 placeholder="e.g. Dr. Ramesh Kumar"
                 value={form.name}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full border border-amber-300 rounded-lg px-4 py-2.5 bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-700"
               />
             </div>
           )}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Faculty Email</label>
+            <label className="block text-xs font-semibold text-stone-500 mb-1 uppercase tracking-wide">Faculty Email</label>
             <input
               name="email"
               type="text"
@@ -104,8 +98,8 @@ export default function LoginFaculty() {
               value={form.email}
               onChange={handleChange}
               required
-              className={`w-full border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 ${
-                emailError ? 'border-red-500 focus:ring-red-400' : 'border-gray-300 focus:ring-emerald-500'
+              className={`w-full border rounded-lg px-4 py-2.5 bg-amber-50 focus:outline-none focus:ring-2 ${
+                emailError ? 'border-red-400 focus:ring-red-400' : 'border-amber-300 focus:ring-amber-700'
               }`}
             />
             {emailError && (
@@ -113,7 +107,7 @@ export default function LoginFaculty() {
             )}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Password</label>
+            <label className="block text-xs font-semibold text-stone-500 mb-1 uppercase tracking-wide">Password</label>
             <div className="relative">
               <input
                 name="password"
@@ -122,12 +116,12 @@ export default function LoginFaculty() {
                 value={form.password}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full border border-amber-300 rounded-lg px-4 py-2.5 pr-12 bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-700"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-sm"
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -136,11 +130,11 @@ export default function LoginFaculty() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-700 text-white font-semibold py-2.5 rounded-lg hover:bg-emerald-800 transition disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full bg-amber-800 text-amber-50 font-semibold py-2.5 rounded-lg hover:bg-stone-800 transition disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4 text-amber-50" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
@@ -152,19 +146,19 @@ export default function LoginFaculty() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="text-center text-sm text-stone-500 mt-4">
           {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             onClick={() => { setIsRegister(!isRegister); setApiError(''); setEmailError(''); }}
-            className="text-emerald-600 font-semibold hover:underline"
+            className="text-amber-800 font-semibold hover:underline"
           >
             {isRegister ? 'Login' : 'Register'}
           </button>
         </p>
 
-        <p className="text-center text-xs text-gray-400 mt-3">
+        <p className="text-center text-xs text-stone-400 mt-3">
           Not faculty?{' '}
-          <button onClick={() => navigate('/login')} className="text-blue-500 hover:underline">
+          <button onClick={() => navigate('/login')} className="text-amber-700 hover:underline">
             Student Login
           </button>
         </p>

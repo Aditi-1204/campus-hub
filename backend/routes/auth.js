@@ -114,7 +114,7 @@ router.post('/login', async (req, res) => {
     console.log('[LOGIN] User found:', user ? user.email : 'NOT FOUND');
 
     if (!user)
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(404).json({ success: false, message: 'User not found. Please register.' });
 
     // 4. Check password field exists (guard against legacy users)
     if (!user.password) {
@@ -127,7 +127,7 @@ router.post('/login', async (req, res) => {
     console.log('[LOGIN] Password match:', isMatch);
 
     if (!isMatch)
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(401).json({ success: false, message: 'Incorrect password. Please try again.' });
 
     // 6. Generate token
     const token = genToken(user._id, user.role);
