@@ -5,6 +5,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import EventsFeed from './pages/EventsFeed';
+import AnnouncementsFeed from './pages/AnnouncementsFeed';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/events" element={<ProtectedRoute><EventsFeed /></ProtectedRoute>} />
+          <Route path="/announcements" element={<ProtectedRoute><AnnouncementsFeed /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

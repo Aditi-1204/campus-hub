@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
+import DashboardSection from '../components/DashboardSection';
+import EventCard from '../components/EventCard';
+import JobCard from '../components/JobCard';
+import AnnouncementCard from '../components/AnnouncementCard';
 
 const stats = [
   { icon: '📚', label: 'Courses Enrolled', value: '6' },
@@ -58,46 +64,43 @@ const quickLinks = [
 ];
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [hubData, setHubData] = useState({ events: [], jobs: [], announcements: [] });
+  const [hubLoading, setHubLoading] = useState(false);
+  const [hubError, setHubError] = useState(null);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     toast.success(`Welcome back, ${user.name}! 👋`, { id: 'welcome' });
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/');
-  };
+  useEffect(() => {
+    if (activeTab !== 'hub') return;
+    setHubLoading(true);
+    setHubError(null);
+    Promise.all([
+      axios.get('http://localhost:5000/api/events'),
+      axios.get('http://localhost:5000/api/jobs'),
+      axios.get('http://localhost:5000/api/announcements'),
+    ])
+      .then(([evRes, jobRes, annRes]) => {
+        setHubData({
+          events: evRes.data.slice(0, 3),
+          jobs: jobRes.data.slice(0, 3),
+          announcements: annRes.data.slice(0, 3),
+        });
+      })
+      .catch(() => setHubError('Failed to load campus hub data.'))
+      .finally(() => setHubLoading(false));
+  }, [activeTab]);
 
-  const tabs = ['overview', 'attendance', 'assignments', 'results', 'timetable'];
+  const tabs = ['overview', 'hub', 'attendance', 'assignments', 'results', 'timetable'];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Topbar */}
-      <nav className="bg-blue-900 text-white px-8 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold">🎓 CampusHub</span>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/events')}
-            className="bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold px-4 py-1.5 rounded-full transition"
-          >
-            📢 Campus Feed
-          </button>
-          <span className="text-blue-200 text-sm">
-            {user?.name} · <span className="capitalize">{user?.role}</span>
-          </span>
-          <button
-            onClick={handleLogout}
-            className="bg-white text-blue-900 text-sm font-semibold px-4 py-1.5 rounded-full hover:bg-blue-50 transition"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
@@ -123,10 +126,46 @@ export default function Dashboard() {
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
               }`}
             >
-              {tab}
+              {tab === 'hub' ? '🏫 Campus Hub' : tab}
             </button>
           ))}
         </div>
+
+        {/* CAMPUS HUB TAB */}
+        {activeTab === 'hub' && (
+          <div className="space-y-10">
+            {hubError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl p-4 text-sm">{hubError}</div>
+            )}
+
+            <DashboardSection title="📅 Upcoming Events" viewAllPath="/events" loading={hubLoading}>
+              {hubData.events.map((ev) => (
+                <EventCard key={ev._id || ev.id} event={ev} />
+              ))}
+              {!hubLoading && hubData.events.length === 0 && !hubError && (
+                <p className="text-sm text-gray-400 col-span-3">No upcoming events.</p>
+              )}
+            </DashboardSection>
+
+            <DashboardSection title="💼 Latest Jobs / Placements" viewAllPath="/events" loading={hubLoading}>
+              {hubData.jobs.map((job) => (
+                <JobCard key={job._id || job.id} job={job} />
+              ))}
+              {!hubLoading && hubData.jobs.length === 0 && !hubError && (
+                <p className="text-sm text-gray-400 col-span-3">No job listings available.</p>
+              )}
+            </DashboardSection>
+
+            <DashboardSection title="📢 Recent Announcements" viewAllPath="/announcements" loading={hubLoading}>
+              {hubData.announcements.map((ann) => (
+                <AnnouncementCard key={ann._id || ann.id} announcement={ann} />
+              ))}
+              {!hubLoading && hubData.announcements.length === 0 && !hubError && (
+                <p className="text-sm text-gray-400 col-span-3">No announcements yet.</p>
+              )}
+            </DashboardSection>
+          </div>
+        )}
 
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
