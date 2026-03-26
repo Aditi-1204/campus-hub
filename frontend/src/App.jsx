@@ -1,7 +1,19 @@
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+<<<<<<< HEAD
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Events from './pages/Events';
+import EventDetail from './pages/EventDetail';
+import CreateEvent from './pages/CreateEvent';
+import Clubs from './pages/Clubs';
+import ClubDetail from './pages/ClubDetail';
+=======
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
+>>>>>>> 6d702ef7b83c9d682a864bb27484a3e2cfb9bd21
 
 import LandingUser from './pages/LandingUser';
 import LandingAdmin from './pages/LandingAdmin';
@@ -17,6 +29,21 @@ import CreatePlacement from './pages/placements/CreatePlacement';
 export default function App() {
   return (
     <AuthProvider>
+<<<<<<< HEAD
+      <BrowserRouter>
+        <Toaster position="top-right" />
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/events/create" element={<CreateEvent />} />
+          <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/clubs" element={<Clubs />} />
+          <Route path="/clubs/:id" element={<ClubDetail />} />
+        </Routes>
+      </BrowserRouter>
+=======
       <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<LandingUser />} />
@@ -68,6 +95,7 @@ export default function App() {
           </PrivateRoute>
         } />
       </Routes>
+>>>>>>> 6d702ef7b83c9d682a864bb27484a3e2cfb9bd21
     </AuthProvider>
   );
 }

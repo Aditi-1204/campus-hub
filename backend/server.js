@@ -3,18 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
-const messageRoutes = require('./routes/messages');
-const adminRoutes = require('./routes/admin');
-const placementRoutes = require("./routes/placementRoutes");
-
-
-// ─── Validate required env variables before starting ────────────────────────
-const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'PORT'];
-const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
-if (missingEnv.length > 0) {
-  console.error(`[STARTUP ERROR] Missing environment variables: ${missingEnv.join(', ')}`);
-  process.exit(1);
-}
 
 const app = express();
 
@@ -33,22 +21,8 @@ app.use(express.json());
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/placements', placementRoutes);
 
-// ─── Global error handler ────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
-  console.error('[UNHANDLED ERROR]', err.message);
-  res.status(500).json({ success: false, message: 'Internal server error' });
-});
-
-// ─── Connect DB and start server ─────────────────────────────────────────────
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000,
-})
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
     app.listen(process.env.PORT, () =>
