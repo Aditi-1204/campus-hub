@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
-export default function Login() {
+export default function LoginFaculty() {
   const [isRegister, setIsRegister] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -14,55 +14,40 @@ export default function Login() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  // If already logged in, redirect to correct dashboard
   useEffect(() => {
     const token = localStorage.getItem('campushub_token');
-    if (token && user) {
-      if (user.role === 'admin') navigate('/admin-dashboard', { replace: true });
-      else if (user.role === 'faculty') navigate('/faculty-dashboard', { replace: true });
-      else navigate('/dashboard', { replace: true });
-    }
+    if (token && user) navigate('/faculty-dashboard', { replace: true });
   }, []);
 
-  const validStudentEmail = (email) => /^[0-9]{10}@cgu-odisha\.ac\.in$/.test(email);
+  const validFacultyEmail = (email) => /^[0-9]{6}[a-zA-Z]{4}@cgu-odisha\.ac\.in$/.test(email);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
     setApiError('');
     if (name === 'email')
-      setEmailError(value && !validStudentEmail(value) ? 'Incorrect email ID' : '');
-  };
-
-  const redirectByRole = (role) => {
-    if (role === 'admin') navigate('/admin-dashboard');
-    else navigate('/dashboard');
+      setEmailError(value && !validFacultyEmail(value) ? 'Incorrect email ID' : '');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError('');
-
-    if (!validStudentEmail(form.email)) {
+    if (!validFacultyEmail(form.email)) {
       setEmailError('Incorrect email ID');
       return;
     }
-
     setLoading(true);
     try {
       const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
       const payload = isRegister
-        ? { name: form.name.trim(), email: form.email.trim(), password: form.password }
+        ? { name: form.name.trim(), email: form.email.trim(), password: form.password, role: 'faculty' }
         : { email: form.email.trim(), password: form.password };
-
       const { data } = await api.post(endpoint, payload);
-
       login(data.user, data.token);
       toast.success(`Welcome, ${data.user.name}!`);
-      redirectByRole(data.user.role);
+      navigate('/faculty-dashboard');
     } catch (err) {
       const raw = err.message || 'Something went wrong';
-      // Map backend messages to user-friendly ones
       const msg =
         raw.includes('not found') || raw.includes('No user') ? 'User not found. Please register first.' :
         raw.includes('Incorrect password') || raw.includes('Invalid credentials') ? 'Incorrect password. Please try again.' :
@@ -79,12 +64,11 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-stone-800 via-amber-900 to-stone-700 flex items-center justify-center px-4">
       <div className="bg-amber-50 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-amber-200">
         <div className="text-center mb-6">
-          <span className="text-3xl">🎓</span>
-          <h2 className="text-2xl font-bold text-stone-800 mt-1">CampusHub</h2>
-          <p className="text-stone-500 text-sm">{isRegister ? 'Create your account' : 'Sign in to your account'}</p>
+          <span className="text-3xl">👨🏫</span>
+          <h2 className="text-2xl font-bold text-stone-800 mt-1">Faculty Portal</h2>
+          <p className="text-stone-500 text-sm">{isRegister ? 'Create your faculty account' : 'Sign in to your faculty account'}</p>
         </div>
 
-        {/* Inline API error banner */}
         {apiError && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
             ⚠️ {apiError}
@@ -97,7 +81,7 @@ export default function Login() {
               <label className="block text-xs font-semibold text-stone-500 mb-1 uppercase tracking-wide">Full Name</label>
               <input
                 name="name"
-                placeholder="e.g. Aditi Sharma"
+                placeholder="e.g. Dr. Ramesh Kumar"
                 value={form.name}
                 onChange={handleChange}
                 required
@@ -106,11 +90,11 @@ export default function Login() {
             </div>
           )}
           <div>
-            <label className="block text-xs font-semibold text-stone-500 mb-1 uppercase tracking-wide">College Email</label>
+            <label className="block text-xs font-semibold text-stone-500 mb-1 uppercase tracking-wide">Faculty Email</label>
             <input
               name="email"
               type="text"
-              placeholder="e.g. 1234567890@cgu-odisha.ac.in"
+              placeholder="e.g. 123456ABcd@cgu-odisha.ac.in"
               value={form.email}
               onChange={handleChange}
               required
@@ -173,9 +157,9 @@ export default function Login() {
         </p>
 
         <p className="text-center text-xs text-stone-400 mt-3">
-          Faculty?{' '}
-          <button onClick={() => navigate('/login-faculty')} className="text-amber-700 hover:underline">
-            Faculty Login
+          Not faculty?{' '}
+          <button onClick={() => navigate('/login')} className="text-amber-700 hover:underline">
+            Student Login
           </button>
         </p>
       </div>

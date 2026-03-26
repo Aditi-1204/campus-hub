@@ -2,11 +2,20 @@ import { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
+const safeParseUser = () => {
+  try {
     const saved = localStorage.getItem('campushub_user');
     return saved ? JSON.parse(saved) : null;
-  });
+  } catch {
+    localStorage.removeItem('campushub_user');
+    return null;
+  }
+};
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(safeParseUser);
+
+  const token = localStorage.getItem('campushub_token');
 
   const login = (userData, token) => {
     localStorage.setItem('campushub_user', JSON.stringify(userData));
@@ -20,7 +29,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
+  // Safe role check — never crashes if user is null
+  const isRole = (role) => user?.role === role;
+
+  // Safe field accessor — returns fallback if user or field is null
+  const getUserField = (field, fallback = '') => user?.[field] ?? fallback;
+
+  return (
+    <AuthContext.Provider value={{ user, token, login, logout, isRole, getUserField }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);

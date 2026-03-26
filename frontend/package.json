@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "campushub",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -28,5 +28,10 @@
     "globals": "^17.4.0",
     "tailwindcss": "^4.2.2",
     "vite": "^8.0.1"
-  }
+  },
+  "description": "CampusHub — College ERP platform for students, faculty and admin.",
+  "main": "eslint.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

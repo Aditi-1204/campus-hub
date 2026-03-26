@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import api from '../api';
+import Navbar from '../components/Navbar';
 
 const stats = [
   { icon: '📚', label: 'Courses Enrolled', value: '6' },
@@ -40,12 +42,47 @@ const attendance = [
   { subject: 'Math III', percent: 85 },
 ];
 
-const results = [
-  { subject: 'Data Structures', mid: 28, max: 30 },
-  { subject: 'DBMS', mid: 24, max: 30 },
-  { subject: 'Computer Networks', mid: 26, max: 30 },
-  { subject: 'OS', mid: 22, max: 30 },
-  { subject: 'Math III', mid: 27, max: 30 },
+const currentSem = 4;
+
+const gradePoint = (g) => ({ O: 10, E: 9, A: 8, B: 7, C: 6, D: 5, F: 0 }[g] ?? 0);
+const getGrade = (m, mx) => { const p = (m / mx) * 100; return p >= 90 ? 'O' : p >= 80 ? 'E' : p >= 70 ? 'A' : p >= 60 ? 'B' : p >= 50 ? 'C' : p >= 40 ? 'D' : 'F'; };
+const calcSGPA = (subjects) => {
+  const totalCredits = subjects.reduce((a, b) => a + b.credits, 0);
+  const weightedSum = subjects.reduce((a, b) => a + b.credits * gradePoint(getGrade(b.marks, b.max)), 0);
+  return (weightedSum / totalCredits).toFixed(2);
+};
+
+const semResults = [
+  {
+    sem: 1,
+    subjects: [
+      { subject: 'Engineering Mathematics I', marks: 72, max: 100, credits: 4 },
+      { subject: 'Engineering Physics', marks: 65, max: 100, credits: 3 },
+      { subject: 'Basic Electrical Engineering', marks: 70, max: 100, credits: 3 },
+      { subject: 'Programming in C', marks: 80, max: 100, credits: 4 },
+      { subject: 'Engineering Graphics', marks: 68, max: 100, credits: 2 },
+    ],
+  },
+  {
+    sem: 2,
+    subjects: [
+      { subject: 'Engineering Mathematics II', marks: 75, max: 100, credits: 4 },
+      { subject: 'Engineering Chemistry', marks: 60, max: 100, credits: 3 },
+      { subject: 'Digital Electronics', marks: 78, max: 100, credits: 3 },
+      { subject: 'Data Structures', marks: 85, max: 100, credits: 4 },
+      { subject: 'Object Oriented Programming', marks: 82, max: 100, credits: 4 },
+    ],
+  },
+  {
+    sem: 3,
+    subjects: [
+      { subject: 'Discrete Mathematics', marks: 70, max: 100, credits: 4 },
+      { subject: 'Computer Organization', marks: 74, max: 100, credits: 3 },
+      { subject: 'Operating Systems', marks: 68, max: 100, credits: 4 },
+      { subject: 'Database Management Systems', marks: 88, max: 100, credits: 4 },
+      { subject: 'Software Engineering', marks: 76, max: 100, credits: 3 },
+    ],
+  },
 ];
 
 const quickLinks = [
@@ -58,47 +95,62 @@ const quickLinks = [
 ];
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, isRole, getUserField } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [commSection, setCommSection] = useState('messaging');
+  const [faculty, setFaculty] = useState([]);
+  const [sentMsgs, setSentMsgs] = useState([]);
+  const [form, setForm] = useState({ receiverId: '', subject: '', body: '', type: 'message' });
+  const [sending, setSending] = useState(false);
+
+  const loadCommunication = async () => {
+    try {
+      const [fRes, sRes] = await Promise.all([
+        api.get('/api/messages/faculty'),
+        api.get('/api/messages/sent'),
+      ]);
+      setFaculty(fRes.data);
+      setSentMsgs(sRes.data);
+    } catch {
+      toast.error('Failed to load communication data');
+    }
+  };
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!form.receiverId) return toast.error('Please select a faculty member');
+    setSending(true);
+    try {
+      await api.post('/api/messages/send', form);
+      toast.success('Sent successfully!');
+      setForm({ receiverId: '', subject: '', body: '', type: form.type });
+      loadCommunication();
+    } catch {
+      toast.error('Failed to send');
+    } finally {
+      setSending(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     toast.success(`Welcome back, ${user.name}! 👋`, { id: 'welcome' });
+    loadCommunication();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/');
-  };
-
-  const tabs = ['overview', 'attendance', 'assignments', 'results', 'timetable'];
+  const tabs = ['overview', 'attendance', 'assignments', 'results', 'timetable', 'communication'];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Topbar */}
-      <nav className="bg-blue-900 text-white px-8 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold">🎓 CampusHub</span>
-        <div className="flex items-center gap-4">
-          <span className="text-blue-200 text-sm">
-            {user?.name} · <span className="capitalize">{user?.role}</span>
-          </span>
-          <button
-            onClick={handleLogout}
-            className="bg-white text-blue-900 text-sm font-semibold px-4 py-1.5 rounded-full hover:bg-blue-50 transition"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-            <p className="text-gray-500 text-sm">Academic Year 2024–25 · Semester VI</p>
+            <h1 className="text-2xl font-bold text-gray-800">Welcome, {getUserField('name', 'Student')} 👋</h1>
+            <p className="text-gray-500 text-sm">Academic Year 2024–25 · Semester VI {isRole('admin') && <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-semibold">Admin</span>}{isRole('faculty') && <span className="ml-2 bg-emerald-100 text-emerald-600 text-xs px-2 py-0.5 rounded-full font-semibold">Faculty</span>}</p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-sm text-blue-800 font-medium">
             📅 {new Date().toDateString()}
@@ -237,38 +289,57 @@ export default function Dashboard() {
 
         {/* RESULTS TAB */}
         {activeTab === 'results' && (
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-6">🏆 Mid-Semester Results</h2>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-400 border-b border-gray-100">
-                  <th className="pb-3 font-medium">Subject</th>
-                  <th className="pb-3 font-medium text-center">Marks Obtained</th>
-                  <th className="pb-3 font-medium text-center">Max Marks</th>
-                  <th className="pb-3 font-medium text-center">Grade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r) => {
-                  const pct = (r.mid / r.max) * 100;
-                  const grade = pct >= 90 ? 'A+' : pct >= 80 ? 'A' : pct >= 70 ? 'B' : 'C';
-                  return (
-                    <tr key={r.subject} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-3 font-medium text-gray-800">{r.subject}</td>
-                      <td className="py-3 text-center text-blue-700 font-bold">{r.mid}</td>
-                      <td className="py-3 text-center text-gray-400">{r.max}</td>
-                      <td className="py-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                          grade === 'A+' ? 'bg-green-100 text-green-700' :
-                          grade === 'A' ? 'bg-blue-100 text-blue-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>{grade}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-700">🏆 End Semester Results</h2>
+              <span className="text-sm text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full font-medium">Current Semester: {currentSem}</span>
+            </div>
+            {semResults.filter((s) => s.sem < currentSem).map((sem) => {
+              const total = sem.subjects.reduce((a, b) => a + b.marks, 0);
+              const maxTotal = sem.subjects.reduce((a, b) => a + b.max, 0);
+              const pct = ((total / maxTotal) * 100).toFixed(1);
+              const sgpa = calcSGPA(sem.subjects);
+              const gradeColor = (g) => g === 'O' ? 'bg-purple-100 text-purple-700' : g === 'E' ? 'bg-green-100 text-green-700' : g === 'A' ? 'bg-blue-100 text-blue-700' : g === 'B' ? 'bg-cyan-100 text-cyan-700' : g === 'C' ? 'bg-yellow-100 text-yellow-700' : g === 'D' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700';
+              return (
+                <div key={sem.sem} className="bg-white rounded-2xl shadow-sm p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-blue-900 text-base">Semester {sem.sem}</h3>
+                    <div className="flex gap-3 text-sm items-center">
+                      <span className="text-gray-500">Total: <span className="font-bold text-gray-800">{total}/{maxTotal}</span></span>
+                      <span className={`font-bold px-3 py-0.5 rounded-full text-xs ${ pct >= 75 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>{pct}%</span>
+                      <span className="font-bold px-3 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">SGPA: {sgpa}</span>
+                    </div>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-400 border-b border-gray-100">
+                        <th className="pb-2 font-medium">Subject</th>
+                        <th className="pb-2 font-medium text-center">Credits</th>
+                        <th className="pb-2 font-medium text-center">Marks</th>
+                        <th className="pb-2 font-medium text-center">Max</th>
+                        <th className="pb-2 font-medium text-center">Grade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sem.subjects.map((r) => {
+                        const grade = getGrade(r.marks, r.max);
+                        return (
+                          <tr key={r.subject} className="border-b border-gray-50 hover:bg-gray-50">
+                            <td className="py-2.5 font-medium text-gray-800">{r.subject}</td>
+                            <td className="py-2.5 text-center text-gray-500">{r.credits}</td>
+                            <td className="py-2.5 text-center text-blue-700 font-bold">{r.marks}</td>
+                            <td className="py-2.5 text-center text-gray-400">{r.max}</td>
+                            <td className="py-2.5 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${gradeColor(grade)}`}>{grade}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -299,6 +370,103 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* COMMUNICATION TAB */}
+        {activeTab === 'communication' && (
+          <div className="space-y-6">
+            {/* Sub-tabs */}
+            <div className="flex gap-2">
+              {['messaging', 'doubts', 'feedback'].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setCommSection(s)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                    commSection === s ? 'bg-blue-800 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  {s === 'messaging' ? '💬 Messaging' : s === 'doubts' ? '🙋 Doubt Clearing' : '⭐ Teacher Feedback'}
+                </button>
+              ))}
+            </div>
+
+            {/* Compose */}
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                {commSection === 'messaging' ? '💬 Send a Message' : commSection === 'doubts' ? '🙋 Ask a Doubt' : '⭐ Give Feedback'}
+              </h2>
+              <form onSubmit={handleSend} className="space-y-4">
+                <select
+                  value={form.receiverId}
+                  onChange={(e) => setForm({ ...form, receiverId: e.target.value, type: commSection === 'messaging' ? 'message' : commSection === 'doubts' ? 'doubt' : 'feedback' })}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Faculty Member</option>
+                  {faculty.length === 0 && <option disabled>No faculty registered yet</option>}
+                  {faculty.map((f) => (
+                    <option key={f._id} value={f._id}>{f.name} — {f.email}</option>
+                  ))}
+                </select>
+                <input
+                  placeholder={commSection === 'feedback' ? 'Subject (e.g. Feedback for Data Structures)' : 'Subject'}
+                  value={form.subject}
+                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <textarea
+                  rows={4}
+                  placeholder={commSection === 'doubts' ? 'Describe your doubt in detail...' : commSection === 'feedback' ? 'Share your feedback about the faculty or subject...' : 'Write your message...'}
+                  value={form.body}
+                  onChange={(e) => setForm({ ...form, body: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="bg-blue-800 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-900 transition disabled:opacity-60"
+                >
+                  {sending ? 'Sending...' : commSection === 'feedback' ? 'Submit Feedback' : 'Send'}
+                </button>
+              </form>
+            </div>
+
+            {/* Sent history */}
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                📤 Sent {commSection === 'messaging' ? 'Messages' : commSection === 'doubts' ? 'Doubts' : 'Feedback'}
+              </h2>
+              {sentMsgs.filter((m) => m.type === (commSection === 'messaging' ? 'message' : commSection === 'doubts' ? 'doubt' : 'feedback')).length === 0 ? (
+                <p className="text-gray-400 text-sm">Nothing sent yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {sentMsgs
+                    .filter((m) => m.type === (commSection === 'messaging' ? 'message' : commSection === 'doubts' ? 'doubt' : 'feedback'))
+                    .map((m) => (
+                      <div key={m._id} className="border border-gray-100 rounded-xl p-4 hover:shadow-sm transition">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-semibold text-gray-800 text-sm">{m.subject}</p>
+                          <span className="text-xs text-gray-400">{new Date(m.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-1">To: {m.receiver?.name}</p>
+                        <p className="text-sm text-gray-600">{m.body}</p>
+                        {m.reply ? (
+                          <div className="mt-3 bg-green-50 border border-green-100 rounded-lg p-3">
+                            <p className="text-xs font-semibold text-green-700 mb-1">✅ Reply from {m.receiver?.name}:</p>
+                            <p className="text-sm text-green-800">{m.reply}</p>
+                            <p className="text-xs text-gray-400 mt-1">{new Date(m.repliedAt).toLocaleDateString()}</p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-orange-400 mt-2">⏳ Awaiting reply...</p>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
         )}
