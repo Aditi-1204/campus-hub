@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import EventsFeed from './pages/EventsFeed';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/events" element={<ProtectedRoute><EventsFeed /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

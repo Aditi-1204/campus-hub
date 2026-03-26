@@ -81,6 +81,12 @@ export default function Dashboard() {
       <nav className="bg-blue-900 text-white px-8 py-4 flex items-center justify-between">
         <span className="text-xl font-bold">🎓 CampusHub</span>
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/events')}
+            className="bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold px-4 py-1.5 rounded-full transition"
+          >
+            📢 Campus Feed
+          </button>
           <span className="text-blue-200 text-sm">
             {user?.name} · <span className="capitalize">{user?.role}</span>
           </span>
