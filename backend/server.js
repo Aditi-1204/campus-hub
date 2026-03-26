@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const messageRoutes = require('./routes/messages');
 const adminRoutes = require('./routes/admin');
+const placementRoutes = require("./routes/placementRoutes");
+
 
 // ─── Validate required env variables before starting ────────────────────────
 const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'PORT'];
@@ -28,6 +30,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/placements', placementRoutes);
 
 // ─── Global error handler ────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
