@@ -62,12 +62,13 @@ export default function Login() {
       redirectByRole(data.user.role);
     } catch (err) {
       const raw = err.message || 'Something went wrong';
-      // Map backend messages to user-friendly ones
       const msg =
         raw.includes('not found') || raw.includes('No user') ? 'User not found. Please register first.' :
         raw.includes('Incorrect password') || raw.includes('Invalid credentials') ? 'Incorrect password. Please try again.' :
-        raw.includes('already registered') ? 'This email is already registered. Please login.' :
+        raw.includes('already registered') || raw.includes('already exists') ? 'This email is already registered. Please login.' :
+        raw.includes('Internal server error') ? 'Server error. Please try again later.' :
         raw;
+      console.error('[AUTH ERROR]', raw); // helps debug in browser console
       setApiError(msg);
       toast.error(msg);
     } finally {
