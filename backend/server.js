@@ -2,63 +2,41 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const authRoutes = require('./routes/auth');
-const messageRoutes = require('./routes/messages');
-const adminRoutes = require('./routes/admin');
-const placementRoutes = require("./routes/placementRoutes");
-
-
-// ─── Validate required env variables before starting ────────────────────────
-const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'PORT'];
-const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
-if (missingEnv.length > 0) {
-  console.error(`[STARTUP ERROR] Missing environment variables: ${missingEnv.join(', ')}`);
-  process.exit(1);
-}
 
 const app = express();
 
-// ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow any localhost port in development
-    if (!origin || /^http:\/\/localhost:\d+$/.test(origin))
-      return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  origin: (origin, cb) => (!origin || /^http:\/\/localhost:\d+$/.test(origin) ? cb(null, true) : cb(new Error('CORS'))),
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 
-// ─── Routes ──────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/placements', placementRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/club', require('./routes/club'));
+app.use('/api/student', require('./routes/student'));
+app.use('/api/placement', require('./routes/placement'));
 
-// ─── Global error handler ────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error('[UNHANDLED ERROR]', err.message);
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-// ─── Connect DB and start server ─────────────────────────────────────────────
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000,
-})
-  .then(() => {
+async function seedAdmin() {
+  const User = require('./models/User');
+  const exists = await User.findOne({ email: 'admin@admin.com' });
+  if (!exists) {
+    await User.create({ name: 'Admin', email: 'admin@admin.com', password: 'admin@123', role: 'admin' });
+    console.log('Admin seeded: admin@admin.com / admin@123');
+  }
+}
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(async () => {
     console.log('MongoDB connected');
-    app.listen(process.env.PORT, () =>
-      console.log(`Server running on port ${process.env.PORT}`)
+    await seedAdmin();
+    app.listen(process.env.PORT || 5000, () =>
+      console.log(`Server running on port ${process.env.PORT || 5000}`)
     );
   })
-  .catch((err) => {
-    console.error('[DB CONNECTION ERROR]', err.message);
-    process.exit(1);
-  });
-
-mongoose.connection.on('disconnected', () => console.warn('[DB] MongoDB disconnected'));
-mongoose.connection.on('reconnected', () => console.log('[DB] MongoDB reconnected'));
+  .catch((err) => { console.error('[DB ERROR]', err.message); process.exit(1); });
