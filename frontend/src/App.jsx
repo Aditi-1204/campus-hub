@@ -16,11 +16,15 @@ import ClubsPage from './pages/club/ClubsPage';
 import EventsPage from './pages/club/EventsPage';
 import ClubMembers from './pages/club/ClubMembers';
 import EventRegistrations from './pages/club/EventRegistrations';
+import ClubEventDetails from './pages/club/ClubEventDetails';
+import ClubDetails from './pages/club/ClubDetails';
 
 import StudentLayout from './layouts/StudentLayout';
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentClubs from './pages/student/StudentClubs';
 import StudentEvents from './pages/student/StudentEvents';
+import StudentEventDetails from './pages/student/StudentEventDetails';
+import StudentClubDetails from './pages/student/StudentClubDetails';
 import MyActivities from './pages/student/MyActivities';
 import StudentInternships from './pages/student/StudentInternships';
 import StudentJobs from './pages/student/StudentJobs';
@@ -58,15 +62,19 @@ export default function App() {
           <Route path="dashboard" element={<ClubDashboard />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="events/:id/registrations" element={<EventRegistrations />} />
+          <Route path="events/:id/details" element={<ClubEventDetails />} />
           <Route path="clubs" element={<ClubsPage />} />
           <Route path="clubs/:id/members" element={<ClubMembers />} />
+          <Route path="clubs/:id/details" element={<ClubDetails />} />
         </Route>
 
         {/* Student */}
         <Route path="/student" element={<StudentLayout />}>
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="clubs" element={<StudentClubs />} />
+          <Route path="clubs/:id" element={<StudentClubDetails />} />
           <Route path="events" element={<StudentEvents />} />
+          <Route path="events/:id" element={<StudentEventDetails />} />
           <Route path="my-activities" element={<MyActivities />} />
           <Route path="internships" element={<StudentInternships />} />
           <Route path="jobs" element={<StudentJobs />} />
