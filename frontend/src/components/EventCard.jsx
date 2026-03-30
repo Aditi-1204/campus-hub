@@ -38,7 +38,7 @@ export default function EventCard({
 }) {
   const e = event;
   const upcoming = new Date(e.date) >= new Date();
-  const imgSrc = EVENT_IMAGES[getIndex(e.title) % EVENT_IMAGES.length];
+  const imgSrc = e.image || EVENT_IMAGES[getIndex(e.title) % EVENT_IMAGES.length];
   const capacity = e.capacity || 100;
   const filled = Math.min(100, Math.round(((e.registrationCount || 0) / capacity) * 100));
   const dateStr = new Date(e.date).toLocaleDateString('en-US', {

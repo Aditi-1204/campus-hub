@@ -9,6 +9,7 @@ const eventSchema = new mongoose.Schema({
   club: { type: mongoose.Schema.Types.ObjectId, ref: 'Club' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   registrations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  image: { type: String, trim: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Event', eventSchema);
